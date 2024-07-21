@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterToUnfoll</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden; /* Menambahkan overflow-x hidden */
+        }
+
+        .modal-container {
+            max-width: 90%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: separate; /* Untuk menggunakan border-spacing */
+            border-spacing: 10px; /* Menambahkan jarak antara kolom */
+        }
+
+        th {
+            padding: 10px; /* Menambahkan padding pada elemen th */
+        }
+
+        @media (max-width: 640px) {
+            .table-container {
+                overflow-x: hidden; /* Menambahkan overflow-x hidden */
+            }
+
+            table {
+                width: 100%;
+                table-layout: fixed; /* Mengubah table-layout menjadi fixed */
+            }
+
+            table th, table td {
+                padding: 8px 4px;
+                word-wrap: break-word; /* Menambahkan word-wrap untuk memecah kata jika terlalu panjang */
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-poppins flex flex-col items-center justify-center">
+    <div class="w-full max-w-lg flex items-center justify-center h-auto p-4" x-data="{ open: false }">
+        <h1 class="py-10 text-center font-semibold text-2xl md:text-3xl">
+            Know who doesn't follow you back on Instagram
+            <span class="relative inline-block">
+                <span class="relative z-10 cursor-pointer" @click="open = true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512" class="inline-block w-6 h-6 ml-1 fill-current text-gray-900">
+                        <path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 398.7c-105.1 0-190.7-85.5-190.7-190.7 0-105.1 85.5-190.7 190.7-190.7 105.1 0 190.7 85.5 190.7 190.7 0 105.1-85.6 190.7-190.7 190.7z"></path>
+                        <path d="M259.6 146c-43.2 0-67.3 20.3-67.6 62.2h18.8c-.6-30.4 15.5-46.5 47.9-46.5 23.2 0 42.6 16.2 42.6 39.8 0 15.3-8.3 27.7-19.4 38.1-22.6 20.8-29 36-30.1 64.5h19c1.1-25.8.5-30.7 23.3-53.3 15.2-14.2 25.9-28.3 25.9-50.2 0-34.2-27.4-54.6-60.4-54.6zM260.3 332.3c-9.4 0-17 7.5-17 16.8s7.6 16.9 17 16.9 17-7.5 17-16.9c0-9.3-7.6-16.8-17-16.8z"></path>
+                    </svg>
+                </span>
+                <div 
+                    x-show="open" 
+                    @click.away="open = false" 
+                    @keydown.escape.window="open = false"
+                    class="modal-backdrop fixed inset-0 z-10 flex items-center justify-center"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    x-on:click="if ($event.target === $el) open = false">
+                    <div class="bg-white p-4 md:p-8 rounded-lg shadow-lg max-w-md w-full z-20">
+                        <div class="text-left">
+                            <h2 class="text-lg font-semibold text-center mb-2">How To Use</h2>
+                            <p class="text-sm font-bold mb-4">This tool doesn't require authentication</p>
+                            <p class="text-sm font-light mb-2">1. Go to Instagram Settings.</p>
+                            <p class="text-sm font-light mb-2">2. Go to Meta Account Center.</p>
+                            <p class="text-sm font-light mb-2">3. Click on "Your Information and Permissions" menu.</p>
+                            <p class="text-sm font-light mb-2">4. Click on "Download Your Information" menu.</p>
+                            <p class="text-sm font-light mb-2">5. Click "Download or Transfer Information".</p>
+                            <p class="text-sm font-light mb-2">6. Select the account from which you want to download information.</p>
+                            <p class="text-sm font-light mb-2">7. Click on "Some of Your Information" menu.</p>
+                            <p class="text-sm font-light mb-2">8. In the "Connection" menu, select "Followers and Following".</p>
+                            <p class="text-sm font-light mb-2">9. Choose "Download to Device".</p>
+                            <p class="text-sm font-light mb-2">10. In the Date Range, select "All Time".</p>
+                            <p class="text-sm font-light mb-2">11. Change the format to .JSON.</p>
+                            <p class="text-sm font-light mb-2">12. Create it and wait until Instagram sends a download notification; it usually takes about 1 minute.</p>
+                            <p class="text-sm font-light mb-2">13. Once the file has been downloaded, extract it and look for files named follower.json and following.json, then upload them here.</p>
+                        </div>
+                    </div>
+                </div>
+            </span>
+        </h1>
+    </div>
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-xl font-semibold mb-6 text-center text-gray-800">Upload Your .JSON Files</h1>
+        <form id="uploadForm">
+            <div class="mb-5">
+                <label for="follower" class="block text-sm font-medium text-gray-600 mb-2">Follower JSON</label>
+                <input type="file" id="follower" name="follower" accept=".json" class="block w-full text-sm text-gray-700 bg-gray-100 rounded border border-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent">
+            </div>
+            <div class="mb-5">
+                <label for="following" class="block text-sm font-medium text-gray-600 mb-2">Following JSON</label>
+                <input type="file" id="following" name="following" accept=".json" class="block w-full text-sm text-gray-700 bg-gray-100 rounded border border-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent">
+            </div>
+            <button type="submit" class="w-full py-2 px-4 bg-pink-500 hover:bg-pink-600 focus:ring-pink-300 focus:ring-offset-pink-200 text-white text-sm leading-5 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2">Submit</button>
+        </form>
+    </div>
+
+    <div id="resultContainer" class="hidden bg-white shadow-md rounded my-6 container mx-auto px-4 md:px-10 py-4 overflow-auto">
+        <div class="table-container">
+            <table class="min-w-full divide-y divide-gray-200 table-fixed">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accounts</th>
+                        <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profiles</th>
+                        <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Checklist</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="mt-20">
+        <h3>202? elrobbet</h3>
+    </div>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const followerFile = document.getElementById('follower').files[0];
+            const followingFile = document.getElementById('following').files[0];
+
+            if (followerFile && followingFile) {
+                console.log('Files selected');
+                Promise.all([followerFile.text(), followingFile.text()])
+                    .then(([followerText, followingText]) => {
+                        console.log('Files read');
+                        let followers, followings;
+
+                        try {
+                            followers = JSON.parse(followerText);
+                            followings = JSON.parse(followingText);
+
+                            console.log('Parsed follower data:', followers);
+                            console.log('Parsed following data:', followings);
+
+                            if (!Array.isArray(followers) || !followings.relationships_following || !Array.isArray(followings.relationships_following)) {
+                                throw new Error("Invalid JSON structure: Root elements are not arrays atau expected properties are missing");
+                            }
+
+                            const followerSet = new Set(followers.flatMap(f => {
+                                if (f.string_list_data && Array.isArray(f.string_list_data)) {
+                                    return f.string_list_data.map(d => d.value);
+                                }
+                                return [];
+                            }));
+
+                            const followingList = followings.relationships_following.flatMap(f => {
+                                if (f.string_list_data && Array.isArray(f.string_list_data)) {
+                                    return f.string_list_data.map(d => ({
+                                        username: d.value,
+                                        href: d.href
+                                    }));
+                                }
+                                return [];
+                            });
+
+                            console.log('Follower set:', followerSet);
+                            console.log('Following list:', followingList);
+
+                            const notFollowingBack = followingList.filter(user => !followerSet.has(user.username));
+
+                            notFollowingBack.sort((a, b) => a.username.localeCompare(b.username));
+
+                            displayResult(notFollowingBack);
+                        } catch (error) {
+                            console.error('Error parsing JSON files:', error);
+                            alert('Invalid JSON format. Please check your files.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error reading files:', error);
+                        alert('There was an error reading the files. Please check the console for more details.');
+                    });
+            } else {
+                alert('Please select both follower and following JSON files.');
+            }
+        });
+
+        function displayResult(users) {
+            const resultTableBody = document.getElementById('resultTableBody');
+            const resultContainer = document.getElementById('resultContainer');
+            resultTableBody.innerHTML = '';
+
+            if (users.length === 0) {
+                resultTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Everyone you follow follows you back!</td></tr>';
+            } else {
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+
+                    const tdUsername = document.createElement('td');
+                    tdUsername.className = 'px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                    tdUsername.textContent = user.username;
+
+                    const tdProfile = document.createElement('td');
+                    tdProfile.className = 'px-2 py-4 whitespace-nowrap text-sm text-pink-600';
+                    const link = document.createElement('a');
+                    link.href = user.href;
+                    link.target = '_blank';
+                    link.textContent = 'View Profile';
+                    link.className = 'bg-pink-500 text-white py-1 px-2 rounded hover:bg-pink-600';
+                    tdProfile.appendChild(link);
+
+                    const tdChecklist = document.createElement('td');
+                    tdChecklist.className = 'px-2 py-4 whitespace-nowrap text-sm text-gray-900';
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.className = 'checkbox-container';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'mr-2';
+                    const unfollowedText = document.createElement('span');
+                    unfollowedText.textContent = 'Unfollowed';
+                    unfollowedText.className = 'unfollowed-text hidden';
+                    checkbox.addEventListener('change', function() {
+                        if (checkbox.checked) {
+                            unfollowedText.classList.remove('hidden');
+                        } else {
+                            unfollowedText.classList.add('hidden');
+                        }
+                    });
+                    checkboxContainer.appendChild(checkbox);
+                    checkboxContainer.appendChild(unfollowedText);
+                    tdChecklist.appendChild(checkboxContainer);
+
+                    tr.appendChild(tdUsername);
+                    tr.appendChild(tdProfile);
+                    tr.appendChild(tdChecklist);
+                    resultTableBody.appendChild(tr);
+                });
+            }
+
+            resultContainer.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
