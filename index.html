@@ -148,124 +148,165 @@
     <div class="mt-20">
         <h3>202? elrobbet</h3>
     </div>
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+        event.preventDefault();
 
-            const followerFile = document.getElementById('follower').files[0];
-            const followingFile = document.getElementById('following').files[0];
+        const followerFile = document.getElementById('follower').files[0];
+        const followingFile = document.getElementById('following').files[0];
 
-            if (followerFile && followingFile) {
-                console.log('Files selected');
-                Promise.all([followerFile.text(), followingFile.text()])
-                    .then(([followerText, followingText]) => {
-                        console.log('Files read');
-                        let followers, followings;
+        if (followerFile && followingFile) {
+            console.log('Files selected');
+            Promise.all([followerFile.text(), followingFile.text()])
+                .then(([followerText, followingText]) => {
+                    console.log('Files read');
+                    let rawFollowers, rawFollowings;
 
-                        try {
-                            followers = JSON.parse(followerText);
-                            followings = JSON.parse(followingText);
+                    try {
+                        rawFollowers = JSON.parse(followerText);
+                        rawFollowings = JSON.parse(followingText);
 
-                            console.log('Parsed follower data:', followers);
-                            console.log('Parsed following data:', followings);
-
-                            if (!Array.isArray(followers) || !followings.relationships_following || !Array.isArray(followings.relationships_following)) {
-                                throw new Error("Invalid JSON structure: Root elements are not arrays atau expected properties are missing");
+                        // Fungsi ekstraksi yang adaptif terhadap inkonsistensi format Meta
+                        const extractUsers = (data, fallbackKey) => {
+                            let targetArray = [];
+                            
+                            if (Array.isArray(data)) {
+                                targetArray = data;
+                            } else if (data && typeof data === 'object') {
+                                if (fallbackKey && Array.isArray(data[fallbackKey])) {
+                                    targetArray = data[fallbackKey];
+                                } else {
+                                    const firstArrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
+                                    if (firstArrayKey) targetArray = data[firstArrayKey];
+                                }
                             }
 
-                            const followerSet = new Set(followers.flatMap(f => {
-                                if (f.string_list_data && Array.isArray(f.string_list_data)) {
-                                    return f.string_list_data.map(d => d.value);
-                                }
-                                return [];
-                            }));
+                            return targetArray.flatMap(item => {
+                                if (!item) return [];
 
-                            const followingList = followings.relationships_following.flatMap(f => {
-                                if (f.string_list_data && Array.isArray(f.string_list_data)) {
-                                    return f.string_list_data.map(d => ({
-                                        username: d.value,
-                                        href: d.href
-                                    }));
+                                // Tarik username default dari item.title jika ada (untuk format following baru)
+                                let fallbackUsername = item.title || "";
+                                
+                                if (item.string_list_data && Array.isArray(item.string_list_data)) {
+                                    return item.string_list_data.map(d => {
+                                        // Ambil username dari d.value, jika tidak ada pakai item.title
+                                        let username = d.value || fallbackUsername;
+                                        
+                                        // Jika keduanya kosong, coba parsing dari href (e.g., .../_u/username)
+                                        if (!username && d.href) {
+                                            const parts = d.href.split('/');
+                                            username = parts[parts.length - 1] || "";
+                                        }
+
+                                        return {
+                                            username: username.trim(),
+                                            href: d.href || `https://www.instagram.com/${username}`
+                                        };
+                                    }).filter(u => u.username !== ""); // Buang data korup jika ada
                                 }
                                 return [];
                             });
+                        };
 
-                            console.log('Follower set:', followerSet);
-                            console.log('Following list:', followingList);
+                        // Ekstrak dengan parser baru yang toleran terhadap hilangnya properti 'value'
+                        const extractedFollowers = extractUsers(rawFollowers, 'relationships_followers');
+                        const extractedFollowings = extractUsers(rawFollowings, 'relationships_following');
 
-                            const notFollowingBack = followingList.filter(user => !followerSet.has(user.username));
+                        console.log('Extracted Followers:', extractedFollowers);
+                        console.log('Extracted Following:', extractedFollowings);
 
-                            notFollowingBack.sort((a, b) => a.username.localeCompare(b.username));
-
-                            displayResult(notFollowingBack);
-                        } catch (error) {
-                            console.error('Error parsing JSON files:', error);
-                            alert('Invalid JSON format. Please check your files.');
+                        if (extractedFollowings.length === 0 && extractedFollowers.length === 0) {
+                            throw new Error("Format JSON tidak cocok atau data kosong.");
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error reading files:', error);
-                        alert('There was an error reading the files. Please check the console for more details.');
-                    });
-            } else {
-                alert('Please select both follower and following JSON files.');
-            }
-        });
 
-        function displayResult(users) {
-            const resultTableBody = document.getElementById('resultTableBody');
-            const resultContainer = document.getElementById('resultContainer');
-            resultTableBody.innerHTML = '';
+                        // Normalisasi ke Set untuk pencarian instan O(1)
+                        const followerSet = new Set(extractedFollowers.map(f => f.username.toLowerCase()));
 
-            if (users.length === 0) {
-                resultTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Everyone you follow follows you back!</td></tr>';
-            } else {
-                users.forEach(user => {
-                    const tr = document.createElement('tr');
+                        // Filter: Cari yang ada di following tapi TIDAK ADA di follower
+                        const notFollowingBack = extractedFollowings.filter(user => {
+                            return !followerSet.has(user.username.toLowerCase());
+                        });
 
-                    const tdUsername = document.createElement('td');
-                    tdUsername.className = 'px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
-                    tdUsername.textContent = user.username;
+                        // Sort alfabetis
+                        notFollowingBack.sort((a, b) => a.username.localeCompare(b.username));
 
-                    const tdProfile = document.createElement('td');
-                    tdProfile.className = 'px-2 py-4 whitespace-nowrap text-sm text-pink-600';
-                    const link = document.createElement('a');
-                    link.href = user.href;
-                    link.target = '_blank';
-                    link.textContent = 'View Profile';
-                    link.className = 'bg-pink-500 text-white py-1 px-2 rounded hover:bg-pink-600';
-                    tdProfile.appendChild(link);
-
-                    const tdChecklist = document.createElement('td');
-                    tdChecklist.className = 'px-2 py-4 whitespace-nowrap text-sm text-gray-900';
-                    const checkboxContainer = document.createElement('div');
-                    checkboxContainer.className = 'checkbox-container';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'mr-2';
-                    const unfollowedText = document.createElement('span');
-                    unfollowedText.textContent = 'Unfollowed';
-                    unfollowedText.className = 'unfollowed-text hidden';
-                    checkbox.addEventListener('change', function() {
-                        if (checkbox.checked) {
-                            unfollowedText.classList.remove('hidden');
-                        } else {
-                            unfollowedText.classList.add('hidden');
-                        }
-                    });
-                    checkboxContainer.appendChild(checkbox);
-                    checkboxContainer.appendChild(unfollowedText);
-                    tdChecklist.appendChild(checkboxContainer);
-
-                    tr.appendChild(tdUsername);
-                    tr.appendChild(tdProfile);
-                    tr.appendChild(tdChecklist);
-                    resultTableBody.appendChild(tr);
+                        displayResult(notFollowingBack);
+                    } catch (error) {
+                        console.error('Error parsing JSON files:', error);
+                        alert('Gagal membaca file JSON. Pastikan Anda mengunggah file yang benar dari Meta.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error reading files:', error);
+                    alert('Terjadi kesalahan saat membaca file.');
                 });
-            }
-
-            resultContainer.classList.remove('hidden');
+        } else {
+            alert('Silakan pilih kedua file JSON (Follower & Following).');
         }
-    </script>
+    });
+
+    function displayResult(users) {
+        const resultTableBody = document.getElementById('resultTableBody');
+        const resultContainer = document.getElementById('resultContainer');
+        resultTableBody.innerHTML = '';
+
+        if (users.length === 0) {
+            resultTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Semua orang yang kamu ikuti sudah follow back kamu!</td></tr>';
+        } else {
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+
+                const tdUsername = document.createElement('td');
+                tdUsername.className = 'px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                tdUsername.textContent = user.username;
+
+                const tdProfile = document.createElement('td');
+                tdProfile.className = 'px-2 py-4 whitespace-nowrap text-sm';
+                const link = document.createElement('a');
+                
+                // Bersihkan URL href jika mengandung format internal app seperti '_u/'
+                let cleanHref = user.href;
+                if (cleanHref.includes('/_u/')) {
+                    cleanHref = `https://www.instagram.com/${user.username}`;
+                }
+                
+                link.href = cleanHref;
+                link.target = '_blank';
+                link.textContent = 'View Profile';
+                link.className = 'bg-pink-500 text-white py-1 px-2 rounded hover:bg-pink-600 inline-block';
+                tdProfile.appendChild(link);
+
+                const tdChecklist = document.createElement('td');
+                tdChecklist.className = 'px-2 py-4 whitespace-nowrap text-sm text-gray-900';
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'flex items-center';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'mr-2 rounded border-gray-300 text-pink-600 focus:ring-pink-500';
+                const unfollowedText = document.createElement('span');
+                unfollowedText.textContent = 'Unfollowed';
+                unfollowedText.className = 'text-xs text-gray-400 hidden';
+                
+                checkbox.addEventListener('change', function() {
+                    if (checkbox.checked) {
+                        unfollowedText.classList.remove('hidden');
+                    } else {
+                        unfollowedText.classList.add('hidden');
+                    }
+                });
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(unfollowedText);
+                tdChecklist.appendChild(checkboxContainer);
+
+                tr.appendChild(tdUsername);
+                tr.appendChild(tdProfile);
+                tr.appendChild(tdChecklist);
+                resultTableBody.appendChild(tr);
+            });
+        }
+
+        resultContainer.classList.remove('hidden');
+    }
+</script>
 </body>
 </html>
